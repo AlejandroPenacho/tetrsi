@@ -14,6 +14,8 @@ pub enum Tetromino {
 pub enum KeyOrder {
     Up,
     Down,
+    SoftDrop,
+    HardDrop,
     Left,
     Right,
     Exit,
@@ -25,6 +27,7 @@ pub struct Game {
     state: Vec<bool>,
     next_piece: Tetromino,
     current_piece: Option<FallingTetromino>,
+    score: u64
 }
 
 pub struct FallingTetromino {
@@ -47,7 +50,8 @@ impl Game {
                 piece: Tetromino::Z(true),
                 position: (3,7),
                 angle: 0
-            })
+            }),
+            score: 0
         }
     }
 
@@ -147,7 +151,7 @@ impl Game {
 
         let mut row = 20;
 
-        let mut clearing = false;
+        let mut n_clears = 0;
 
         while row >0 {
             row -= 1;
@@ -155,7 +159,7 @@ impl Game {
             let hole = (0..10).any(|i| !self.state[row*10 + i]);
 
             if !hole {
-                clearing = true;
+                n_clears += 1;
                 (0..10).for_each(|i| self.state[row*10 + i] = false);
 
                 (0..10).for_each(|i| self.state[i] = false);
@@ -167,9 +171,17 @@ impl Game {
 
         }
 
-        if clearing {
+        if n_clears > 0 {
             self.redraw_interior();
+            match n_clears {
+                1 => {self.update_score(40)},
+                2 => {self.update_score(100)},
+                3 => {self.update_score(300)},
+                4 => {self.update_score(1200)},
+                _ => {panic!()}
+            }
         }
+
 
     }
 
@@ -202,8 +214,12 @@ impl Game {
             execute!(stdout, cursor::MoveTo(point.0 as u16, point.1 as u16)).unwrap();
             print!("@\n");
         }
- 
-        
+    }
+
+    pub fn update_score(&mut self, points: u64) {
+        self.score += points;
+        execute!(std::io::stdout(), cursor::MoveTo(15,3));
+        print!("{}", self.score);
     }
 }
 
@@ -223,6 +239,12 @@ impl TetrisBoard {
             print!("#");
         }
         print!("\n");
+
+        execute!(stdout, cursor::MoveTo(15, 2));
+        print!("Score:\n");
+        execute!(stdout, cursor::MoveTo(15, 3));
+        print!("{}", 0);
+
         execute!(stdout, cursor::MoveTo(15, 5));
         print!("Next piece:\n")
     }
