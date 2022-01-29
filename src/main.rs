@@ -18,8 +18,10 @@ fn main() {
     let (sender, receiver) = mpsc::channel::<game::KeyOrder>();
 
     let event_sender = sender.clone();
+    let auto_fall_sender = sender.clone();
 
     let key_handle = thread::spawn(move || event::event_loop(event_sender));
+    let auto_fall_handle = thread::spawn(move || event::auto_fall(auto_fall_sender));
 
     loop {
         let next_event = receiver.recv().unwrap();
@@ -27,9 +29,18 @@ fn main() {
         if next_event == game::KeyOrder::Exit {
             break
         }
+        
+        match next_event {
+            x if x == game::KeyOrder::Down => {game.move_piece((0, 1), 0)},
+            x if x == game::KeyOrder::Up => {game.move_piece((0, -1), 0)},
+            x if x == game::KeyOrder::Left => {game.move_piece((-1, 0), 0)},
+            x if x == game::KeyOrder::Right=> {game.move_piece((1, 0), 0)},
+            x if x == game::KeyOrder::Rotate=> {game.move_piece((0, 0), 1)},
+            _ => {}
+        }
     }
 
-    key_handle.join();
+    key_handle.join().unwrap();
 
     finish_game();
 

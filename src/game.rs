@@ -14,7 +14,8 @@ pub enum KeyOrder {
     Down,
     Left,
     Right,
-    Exit
+    Exit,
+    Rotate
 }
 
 enum Orientation {
@@ -59,8 +60,63 @@ impl Game {
 
     pub fn draw_piece(&self) {
         if let Some(piece) = &self.current_piece {
-            piece.draw(self.board.x_0);
+            piece.draw("#", self.board.x_0);
         }
+    }
+
+    pub fn erase_piece(&self) {
+        if let Some(piece) = &self.current_piece {
+            piece.draw(" ", self.board.x_0);
+        }
+    }
+
+    fn position_is_valid(&self) -> bool {
+        let piece_grid = self.current_piece.as_ref().unwrap().get_rotated_grid();
+        let center_position = self.current_piece.as_ref().unwrap().position;
+
+        for grid in piece_grid {
+            let point = (
+                center_position.0 + grid.0,
+                center_position.1 + grid.1
+            );
+
+            if  point.0 < 0 ||
+                point.0 > 9 ||
+                point.1 < 0 ||
+                point.1 > 19 {
+
+
+                return false
+            }
+            
+            if self.state[point.0 as usize + 10 * point.1 as usize] {
+                return false
+            }
+
+        }
+        return true
+    }
+
+    pub fn move_piece(&mut self, delta_x: (i16, i16), rotation: u8) {
+
+        let original_position = self.current_piece.as_ref().unwrap().position;
+        let original_angle = self.current_piece.as_ref().unwrap().angle;
+
+        self.erase_piece();
+
+        self.current_piece.as_mut().unwrap().position = (
+            original_position.0 + delta_x.0,
+            original_position.1 + delta_x.1
+        );
+
+        self.current_piece.as_mut().unwrap().angle = (self.current_piece.as_mut().unwrap().angle + rotation) % 4;
+
+        if !self.position_is_valid() {
+            self.current_piece.as_mut().unwrap().position = original_position;
+            self.current_piece.as_mut().unwrap().angle = original_angle;
+        }
+
+        self.draw_piece();
     }
 }
 
@@ -116,7 +172,7 @@ impl FallingTetromino {
 
     }
 
-    pub fn draw(&self, board_offset: (i16, i16)) {
+    pub fn draw(&self, fill: &str, board_offset: (i16, i16)) {
         let mut stdout = std::io::stdout();
         let points = self.get_rotated_grid();
         for point in points {
@@ -125,9 +181,11 @@ impl FallingTetromino {
                 self.position.1 + point.1 + board_offset.1,
             );
             execute!(stdout, cursor::MoveTo(position.0 as u16, position.1 as u16)).unwrap();
-            print!("#\n")
+            print!("{}\n", fill);
         }
     }
+
+
 }
 
 
