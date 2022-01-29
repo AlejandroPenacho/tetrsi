@@ -1,4 +1,6 @@
 use crossterm::{execute, cursor};
+use rand;
+use rand::seq::SliceRandom;
 
 pub enum Tetromino {
     Straight,
@@ -16,11 +18,6 @@ pub enum KeyOrder {
     Right,
     Exit,
     Rotate
-}
-
-enum Orientation {
-    Left,
-    Right,
 }
 
 pub struct Game {
@@ -56,11 +53,12 @@ impl Game {
 
     pub fn draw_board(&self) {
         self.board.draw();
+        self.draw_next_piece();
     }
 
     pub fn draw_piece(&self) {
         if let Some(piece) = &self.current_piece {
-            piece.draw("#", self.board.x_0);
+            piece.draw("@", self.board.x_0);
         }
     }
 
@@ -97,7 +95,7 @@ impl Game {
         return true
     }
 
-    pub fn move_piece(&mut self, delta_x: (i16, i16), rotation: u8) {
+    pub fn move_piece(&mut self, delta_x: (i16, i16), rotation: u8, falling: bool) {
 
         let original_position = self.current_piece.as_ref().unwrap().position;
         let original_angle = self.current_piece.as_ref().unwrap().angle;
@@ -114,9 +112,98 @@ impl Game {
         if !self.position_is_valid() {
             self.current_piece.as_mut().unwrap().position = original_position;
             self.current_piece.as_mut().unwrap().angle = original_angle;
+
+            if falling {
+                self.draw_piece();
+                self.fix_piece();
+            }
         }
 
         self.draw_piece();
+    }
+
+    fn fix_piece(&mut self) {
+        let current_piece = self.current_piece.as_mut().unwrap();
+        let center = current_piece.position;
+        for grid in current_piece.get_rotated_grid() {
+            let real_point = (
+                center.0 + grid.0,
+                center.1 + grid.1
+            );
+            self.state[real_point.0 as usize + real_point.1 as usize *10] = true;
+        }
+
+        self.current_piece = Some(FallingTetromino::new(
+            std::mem::replace(&mut self.next_piece, get_random_tetromino()),
+            (5,5),
+            0
+        ));
+        self.draw_next_piece();
+
+        self.clean_lines();
+    }
+
+    fn clean_lines(&mut self) {
+
+        let mut row = 20;
+
+        let mut clearing = false;
+
+        while row >0 {
+            row -= 1;
+
+            let hole = (0..10).any(|i| !self.state[row*10 + i]);
+
+            if !hole {
+                clearing = true;
+                (0..10).for_each(|i| self.state[row*10 + i] = false);
+
+                (0..10).for_each(|i| self.state[i] = false);
+                for sub_row in (1..(row+1)).rev() {
+                    (0..10).for_each(|i| self.state[sub_row*10 + i] = self.state[(sub_row-1)*10 + i]);
+                }
+                row += 1;
+            }
+
+        }
+
+        if clearing {
+            self.redraw_interior();
+        }
+
+    }
+
+    fn redraw_interior(&mut self) {
+        let mut stdout = std::io::stdout();
+        execute!(stdout, cursor::MoveTo(self.board.x_0.0 as u16, self.board.x_0.1 as u16));
+        for row in 0..20 {
+            for i in 0..10 {
+                if self.state[i + row*10] {
+                    print!("@");
+                } else {
+                    print!(" ");
+                }
+            }
+            print!("\n");
+            execute!(stdout, cursor::MoveLeft(10));
+        }
+    }
+
+    fn draw_next_piece(&self) {
+        let mut stdout = std::io::stdout();
+        for i in 6..12 {
+            execute!(stdout, cursor::MoveTo(15, i));
+            print!("         \n");
+        }
+        let center = (20, 9);
+        let points: Vec<(i16, i16)> = self.next_piece.get_grid().iter().map(|x| (x.0 + center.0, x.1 + center.1)).collect();
+
+        for point in points {
+            execute!(stdout, cursor::MoveTo(point.0 as u16, point.1 as u16)).unwrap();
+            print!("@\n");
+        }
+ 
+        
     }
 }
 
@@ -136,7 +223,8 @@ impl TetrisBoard {
             print!("#");
         }
         print!("\n");
-
+        execute!(stdout, cursor::MoveTo(15, 5));
+        print!("Next piece:\n")
     }
 }
 
@@ -218,4 +306,22 @@ impl Tetromino {
             }
         } 
      }
+ }
+
+
+ fn get_random_tetromino() -> Tetromino {
+
+    let mut rng = rand::thread_rng();
+    let x = [0,1,2,3,4];
+    let dice = x.choose(&mut rng).unwrap();
+    let oriented: bool = rand::random();
+
+    match dice {
+        0 => Tetromino::Straight,
+        1 => Tetromino::Square,
+        2 => Tetromino::T,
+        3 => Tetromino::L(oriented),
+        4 => Tetromino::Z(oriented),
+        _ => panic!()
+    }
  }

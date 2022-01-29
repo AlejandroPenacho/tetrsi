@@ -31,11 +31,11 @@ fn main() {
         }
         
         match next_event {
-            x if x == game::KeyOrder::Down => {game.move_piece((0, 1), 0)},
-            x if x == game::KeyOrder::Up => {game.move_piece((0, -1), 0)},
-            x if x == game::KeyOrder::Left => {game.move_piece((-1, 0), 0)},
-            x if x == game::KeyOrder::Right=> {game.move_piece((1, 0), 0)},
-            x if x == game::KeyOrder::Rotate=> {game.move_piece((0, 0), 1)},
+            x if x == game::KeyOrder::Down => {game.move_piece((0, 1), 0, true)},
+            x if x == game::KeyOrder::Up => {game.move_piece((0, -1), 0, false)},
+            x if x == game::KeyOrder::Left => {game.move_piece((-1, 0), 0, false)},
+            x if x == game::KeyOrder::Right=> {game.move_piece((1, 0), 0, false)},
+            x if x == game::KeyOrder::Rotate=> {game.move_piece((0, 0), 1, false)},
             _ => {}
         }
     }
