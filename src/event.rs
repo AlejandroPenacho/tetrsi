@@ -33,7 +33,7 @@ pub fn event_loop(sender: mpsc::Sender<KeyOrder>) {
 
         let out = match event {
             x if x == down_key => Some(KeyOrder::SoftDrop),
-            x if x == up_key => Some(KeyOrder::Up),
+            x if x == up_key => Some(KeyOrder::HardDrop),
             x if x == left_key => Some(KeyOrder::Left),
             x if x == right_key => Some(KeyOrder::Right),
             x if x == exit_key => Some(KeyOrder::Exit),

@@ -12,7 +12,6 @@ pub enum Tetromino {
 
 #[derive(PartialEq, Eq)]
 pub enum KeyOrder {
-    Up,
     Down,
     SoftDrop,
     HardDrop,
@@ -99,7 +98,7 @@ impl Game {
         return true
     }
 
-    pub fn move_piece(&mut self, delta_x: (i16, i16), rotation: u8, falling: bool) {
+    pub fn move_piece(&mut self, delta_x: (i16, i16), rotation: u8, falling: bool) -> bool {
 
         let original_position = self.current_piece.as_ref().unwrap().position;
         let original_angle = self.current_piece.as_ref().unwrap().angle;
@@ -113,6 +112,8 @@ impl Game {
 
         self.current_piece.as_mut().unwrap().angle = (self.current_piece.as_mut().unwrap().angle + rotation) % 4;
 
+        let mut has_fixed: bool = false;
+
         if !self.position_is_valid() {
             self.current_piece.as_mut().unwrap().position = original_position;
             self.current_piece.as_mut().unwrap().angle = original_angle;
@@ -120,10 +121,12 @@ impl Game {
             if falling {
                 self.draw_piece();
                 self.fix_piece();
+                has_fixed = true;
             }
         }
 
         self.draw_piece();
+        has_fixed
     }
 
     fn fix_piece(&mut self) {
