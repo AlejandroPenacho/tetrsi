@@ -44,9 +44,9 @@ impl Game {
         Game {
             board: TetrisBoard { x_0: (2,2)},
             state: vec![false;200],
-            next_piece: Tetromino::Straight,
+            next_piece: get_random_tetromino(),
             current_piece: Some(FallingTetromino {
-                piece: Tetromino::Z(true),
+                piece: get_random_tetromino(),
                 position: (3,7),
                 angle: 0
             }),
