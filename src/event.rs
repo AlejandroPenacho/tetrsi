@@ -32,12 +32,12 @@ pub fn event_loop(sender: mpsc::Sender<KeyOrder>) {
         let event = event::read().unwrap();
 
         let out = match event {
-            x if x == down_key => Some(KeyOrder::SoftDrop),
-            x if x == up_key => Some(KeyOrder::HardDrop),
-            x if x == left_key => Some(KeyOrder::Left),
-            x if x == right_key => Some(KeyOrder::Right),
-            x if x == exit_key => Some(KeyOrder::Exit),
-            x if x == rotate_key => Some(KeyOrder::Rotate),
+            _ if event == down_key => Some(KeyOrder::SoftDrop),
+            _ if event == up_key => Some(KeyOrder::HardDrop),
+            _ if event == left_key => Some(KeyOrder::Left),
+            _ if event == right_key => Some(KeyOrder::Right),
+            _ if event == exit_key => Some(KeyOrder::Exit),
+            _ if event == rotate_key => Some(KeyOrder::Rotate),
             _ => {None}
         };
 
